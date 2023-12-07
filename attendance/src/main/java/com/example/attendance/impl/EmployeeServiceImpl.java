@@ -1,5 +1,6 @@
 package com.example.attendance.impl;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
@@ -8,6 +9,7 @@ import javax.servlet.http.HttpSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -28,14 +30,17 @@ import com.example.attendance.vo.BasicRes;
 @Service
 public class EmployeeServiceImpl implements EmployeeService {
 	private Logger logger = LoggerFactory.getLogger(getClass());
+
 	private BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
 
+	@Value("${authcode.expired.time}")
+	private int authCodeExpiredTime;
 	@Autowired
 	private EmployeeDao dao;
 
 	@Autowired
 	private DepartmentsDao departmentsDao;
-	
+
 	@Autowired
 	private AuthCodeDao authCodeDao;
 
@@ -89,6 +94,10 @@ public class EmployeeServiceImpl implements EmployeeService {
 			return new BasicRes(RtnCode.PASSWORD_ERROR);
 
 		}
+		if (!employee.isActive()) {
+			return new BasicRes(RtnCode.ACCOUNT_DEACTIVATE);
+
+		}
 		session.setAttribute(id, id);
 		// 單位秒五分鐘
 		session.setMaxInactiveInterval(300);
@@ -106,6 +115,8 @@ public class EmployeeServiceImpl implements EmployeeService {
 			return new BasicRes(RtnCode.OLD_PASSWORD_AND_NEW_PASSWORD_ARE_IDENTICAL);
 
 		}
+
+		// 沒寫
 		Optional<Employee> op = dao.findById(id);
 		if (op.isEmpty()) {
 			{
@@ -158,14 +169,15 @@ public class EmployeeServiceImpl implements EmployeeService {
 		}
 		String randomPwd = RandomString.make(12);
 		employee.setPwd(encoder.encode(randomPwd));
-		
+
 		// 產生驗證碼,有效30分
 		String authCode = RandomString.make(6);
-		
+
 		LocalDateTime now = LocalDateTime.now();
 		try {
 			dao.save(employee);
-			authCodeDao.save(new AuthCode(employee.getId(),authCode,now));
+			// 設定30分鐘
+			authCodeDao.save(new AuthCode(employee.getId(), authCode, now.plusMinutes(authCodeExpiredTime)));
 
 		} catch (Exception e) {
 			logger.error(e.getMessage());
@@ -173,6 +185,144 @@ public class EmployeeServiceImpl implements EmployeeService {
 
 		}
 		// 間接email並寄送auth_Code
+		return new BasicRes(RtnCode.SUCCESSFUL);
+	}
+
+	@Override
+	public BasicRes changePasswordByAuthCode(String id, String authCode, String newPwd) {
+		if (!StringUtils.hasText(id) || !StringUtils.hasText(authCode) || !StringUtils.hasText(newPwd)) {
+			return new BasicRes(RtnCode.PARAM_ERROR);
+
+		}
+		Optional<AuthCode> op = authCodeDao.findById(id);
+
+		if (op.isEmpty()) {
+			return new BasicRes(RtnCode.ID_NOT_FOUND);
+
+		}
+		AuthCode authCodeEntity = op.get();
+		if (!authCodeEntity.getAuthCode().equals(authCode)) {
+			return new BasicRes(RtnCode.AUTH_CODE_NOT_MATCH);
+
+		}
+
+		LocalDateTime now = LocalDateTime.now();
+		// 當在這個時間之後
+		if (now.isAfter(authCodeEntity.getAuthDatetime())) {
+			return new BasicRes(RtnCode.AUTH_CODE_EXPIRED);
+
+		}
+
+		Employee employee = dao.findById(id).get();
+		employee.setPwd(encoder.encode(newPwd));
+		try {
+			dao.save(employee);
+
+		} catch (Exception e) {
+			logger.error(e.getMessage());
+			return new BasicRes(RtnCode.CHANGE_PASSWORD_ERROR);
+
+		}
+		// check auth code
+		return new BasicRes(RtnCode.SUCCESSFUL);
+	}
+
+	@Override
+	public BasicRes activate(String executorId, String employeeId) {
+		if (!StringUtils.hasText(executorId) || !StringUtils.hasText(employeeId) || executorId.equals(employeeId)) {
+			return new BasicRes(RtnCode.PARAM_ERROR);
+
+		}
+		Optional<Employee> op = dao.findById(employeeId);
+		if (op.isEmpty()) {
+
+			return new BasicRes(RtnCode.ID_NOT_FOUND);
+
+		}
+		Employee executor = op.get();
+		if (executor.getDepartment().equalsIgnoreCase("ADMIN") || executor.getDepartment().equalsIgnoreCase("HR")) {
+			return new BasicRes(RtnCode.UNAUTHORIZATED);
+		}
+
+		if (dao.updateActive(employeeId, true) != 1) {
+			return new BasicRes(RtnCode.UPDATE_FAILED);
+
+		}
+		return new BasicRes(RtnCode.SUCCESSFUL);
+	}
+
+	@Override
+	public BasicRes deactivate(String executorId, String employeeId) {
+
+		if (!StringUtils.hasText(executorId) || !StringUtils.hasText(employeeId) || executorId.equals(employeeId)) {
+			return new BasicRes(RtnCode.PARAM_ERROR);
+
+		}
+		Optional<Employee> op = dao.findById(employeeId);
+		if (op.isEmpty()) {
+
+			return new BasicRes(RtnCode.ID_NOT_FOUND);
+
+		}
+		Employee executor = op.get();
+		if (executor.getDepartment().equalsIgnoreCase("ADMIN") || executor.getDepartment().equalsIgnoreCase("HR")) {
+			return new BasicRes(RtnCode.UNAUTHORIZATED);
+		}
+
+		if (dao.updateActive(employeeId, false) != 1) {
+			return new BasicRes(RtnCode.UPDATE_FAILED);
+
+		}
+		return new BasicRes(RtnCode.SUCCESSFUL);
+	}
+
+	@Override
+	public BasicRes updateActivate(String executorId, String employeeId, boolean isActive) {
+		if (!StringUtils.hasText(executorId) || !StringUtils.hasText(employeeId) || executorId.equals(employeeId)) {
+			return new BasicRes(RtnCode.PARAM_ERROR);
+
+		}
+		// 判斷是否為空,方法需要login才能使用,login方法已有判斷
+
+		Employee executor = dao.findById(executorId).get();
+
+		if (executor.getDepartment().equalsIgnoreCase("ADMIN") || executor.getDepartment().equalsIgnoreCase("HR")) {
+			return new BasicRes(RtnCode.UNAUTHORIZATED);
+		}
+
+		if (dao.updateActive(employeeId, isActive) != 1) {
+			return new BasicRes(RtnCode.UPDATE_FAILED);
+
+		}
+		return new BasicRes(RtnCode.SUCCESSFUL);
+	}
+
+	@Override
+	public BasicRes resign(String executorId, String employeeId) {
+
+		if (!StringUtils.hasText(executorId) || !StringUtils.hasText(employeeId) || executorId.equals(employeeId)) {
+			return new BasicRes(RtnCode.PARAM_ERROR);
+
+		}
+		// 判斷是否為空,方法需要login才能使用,login方法已有判斷
+		Employee executor = dao.findById(executorId).get();
+
+		if (executor.getDepartment().equalsIgnoreCase("HR")) {
+			return new BasicRes(RtnCode.UNAUTHORIZATED);
+		}
+		Employee employee = dao.findById(employeeId).get();
+		employee.setResignationDate(LocalDate.now().plusMonths(1));
+		employee.setQuitReason("玉翔不想幹了!!!");
+
+		try {
+			dao.save(employee);
+
+		} catch (Exception e) {
+
+			logger.error(e.getMessage());
+			return new BasicRes(RtnCode.UPDATE_FAILED);
+
+		}
 		return new BasicRes(RtnCode.SUCCESSFUL);
 	}
 }

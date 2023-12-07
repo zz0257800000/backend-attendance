@@ -25,4 +25,13 @@ public class DepartmentsTest {
 				Assert.isTrue(res.getRtnCode().getCode() == 200, "create error");
 
 	}
+	@Test
+	public void createDepTest() {
+		DepartmentsCreateReq req = new DepartmentsCreateReq(Arrays.asList(
+				new Departments("01","HR"),new Departments("02","IT")));
+		BasicRes res = service.create(req);
+		Assert.isTrue(res.getRtnCode().getCode() == 200, "create error");
+
+		
+	}
 }
