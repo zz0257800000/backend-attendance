@@ -14,7 +14,9 @@ import com.example.attendance.ifs.EmployeeService;
 import com.example.attendance.vo.BasicRes;
 import com.example.attendance.vo.ChangePasswordReq;
 import com.example.attendance.vo.EmployeeCreateReq;
+import com.example.attendance.vo.EmployeeRes;
 import com.example.attendance.vo.ForgotPasswordReq;
+import com.example.attendance.vo.GetEmployeeInfoReq;
 import com.example.attendance.vo.LoginReq;
 
 @RestController
@@ -95,6 +97,16 @@ public class EmployeeeController {
 
 		return employeeservice.changePasswordByAuthCode(req.getId(), req.getAuthCode(), req.getNewPwd());
 
+	}
+
+	@PostMapping(value = "api/attendance/employee/get_info")
+
+	public EmployeeRes findByEmployeeId( @RequestBody GetEmployeeInfoReq req, HttpSession session) {
+		if (session.getAttribute(req.getCallerId()) == null) {
+			return new EmployeeRes(RtnCode.PLEASE_lOGIN_FIRST,null);
+
+		}
+		return employeeservice.findByEmployeeId(req.getCallerId());
 	}
 
 }

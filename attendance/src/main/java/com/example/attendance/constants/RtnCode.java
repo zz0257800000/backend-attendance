@@ -17,6 +17,8 @@ public enum RtnCode {
 	AUTH_CODE_NOT_MATCH(400,"Auth code not match!!"),
 	AUTH_CODE_EXPIRED(400,"Auth code expired!!"),
 	UPDATE_FAILED(400,"update failed!!"),
+	UPDATE_ERROR(400,"update error!!"),
+
 	ACCOUNT_DEACTIVATE(400,"account deactivate!!"),
 
 

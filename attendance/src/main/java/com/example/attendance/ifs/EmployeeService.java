@@ -2,8 +2,10 @@ package com.example.attendance.ifs;
 
 import javax.servlet.http.HttpSession;
 
+import com.example.attendance.entity.Employee;
 import com.example.attendance.vo.BasicRes;
 import com.example.attendance.vo.EmployeeCreateReq;
+import com.example.attendance.vo.EmployeeRes;
 
 public interface EmployeeService {
 
@@ -20,8 +22,18 @@ public interface EmployeeService {
 	public BasicRes activate(String executorId, String employeeId);
 
 	public BasicRes deactivate(String executorId, String employeeId);
-	//同時可以達到activate  和 deactivate的效用
+
+	// 同時可以達到activate 和 deactivate的效用
 	public BasicRes updateActivate(String executorId, String employeeId, boolean isActive);
-	
-	public BasicRes resign( String executorId, String employeeId);
+
+	public BasicRes updateResign(String executorId, String employeeId);
+
+	public BasicRes resignApplication(String employeeId);
+
+	public BasicRes updateInfo(String executorId, Employee employee);
+
+	public EmployeeRes findByEmployeeId(String employeeId);
+
+	public EmployeeRes findStaffInfo(String callerId,String targetId);
+
 }

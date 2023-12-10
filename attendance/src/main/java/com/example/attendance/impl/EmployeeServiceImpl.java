@@ -14,14 +14,18 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import com.example.attendance.constants.JobPosition;
 import com.example.attendance.constants.RtnCode;
 import com.example.attendance.entity.AuthCode;
 import com.example.attendance.entity.Employee;
+import com.example.attendance.entity.ResignApplication;
 import com.example.attendance.ifs.EmployeeService;
 import com.example.attendance.reposity.AuthCodeDao;
 import com.example.attendance.reposity.DepartmentsDao;
 import com.example.attendance.reposity.EmployeeDao;
+import com.example.attendance.reposity.ResignApplicationDao;
 import com.example.attendance.vo.EmployeeCreateReq;
+import com.example.attendance.vo.EmployeeRes;
 
 import net.bytebuddy.utility.RandomString;
 
@@ -43,6 +47,8 @@ public class EmployeeServiceImpl implements EmployeeService {
 
 	@Autowired
 	private AuthCodeDao authCodeDao;
+	@Autowired
+	private ResignApplicationDao resignApplicationDao;
 
 	@Override
 	public BasicRes create(EmployeeCreateReq req) {
@@ -108,6 +114,7 @@ public class EmployeeServiceImpl implements EmployeeService {
 	@Override
 	public BasicRes changePassword(String id, String oldPwd, String newPwd) {
 		if (!StringUtils.hasText(id) || !StringUtils.hasText(oldPwd) || !StringUtils.hasText(newPwd)) {
+			return new BasicRes(RtnCode.PARAM_ERROR);
 
 		}
 		if (oldPwd.equals(newPwd)) {
@@ -117,17 +124,12 @@ public class EmployeeServiceImpl implements EmployeeService {
 		}
 
 		// 沒寫
-		Optional<Employee> op = dao.findById(id);
-		if (op.isEmpty()) {
+		Employee employee = dao.findById(id).get();
+		if (!encoder.matches(oldPwd, employee.getPwd())) {
 			{
+				return new BasicRes(RtnCode.PASSWORD_ERROR);
 
 			}
-		}
-
-		Employee employee = op.get();
-		if (!encoder.matches(oldPwd, employee.getPwd())) {
-			return new BasicRes(RtnCode.PASSWORD_ERROR);
-
 		}
 
 		employee.setPwd(encoder.encode(newPwd));
@@ -227,20 +229,17 @@ public class EmployeeServiceImpl implements EmployeeService {
 		return new BasicRes(RtnCode.SUCCESSFUL);
 	}
 
+	// 此方法棄用,因為由updateActivate取代
+	@Deprecated
 	@Override
 	public BasicRes activate(String executorId, String employeeId) {
-		if (!StringUtils.hasText(executorId) || !StringUtils.hasText(employeeId) || executorId.equals(employeeId)) {
+		if (!StringUtils.hasText(employeeId) || executorId.equals(employeeId)) {
 			return new BasicRes(RtnCode.PARAM_ERROR);
 
 		}
-		Optional<Employee> op = dao.findById(employeeId);
-		if (op.isEmpty()) {
+		Employee executor = dao.findById(executorId).get();
 
-			return new BasicRes(RtnCode.ID_NOT_FOUND);
-
-		}
-		Employee executor = op.get();
-		if (executor.getDepartment().equalsIgnoreCase("ADMIN") || executor.getDepartment().equalsIgnoreCase("HR")) {
+		if (!executor.getDepartment().equalsIgnoreCase("ADMIN") && !executor.getDepartment().equalsIgnoreCase("HR")) {
 			return new BasicRes(RtnCode.UNAUTHORIZATED);
 		}
 
@@ -251,6 +250,8 @@ public class EmployeeServiceImpl implements EmployeeService {
 		return new BasicRes(RtnCode.SUCCESSFUL);
 	}
 
+	// 此方法棄用,因為由updateActivate取代
+	@Deprecated
 	@Override
 	public BasicRes deactivate(String executorId, String employeeId) {
 
@@ -258,14 +259,9 @@ public class EmployeeServiceImpl implements EmployeeService {
 			return new BasicRes(RtnCode.PARAM_ERROR);
 
 		}
-		Optional<Employee> op = dao.findById(employeeId);
-		if (op.isEmpty()) {
+		Employee executor = dao.findById(executorId).get();
 
-			return new BasicRes(RtnCode.ID_NOT_FOUND);
-
-		}
-		Employee executor = op.get();
-		if (executor.getDepartment().equalsIgnoreCase("ADMIN") || executor.getDepartment().equalsIgnoreCase("HR")) {
+		if (!executor.getDepartment().equalsIgnoreCase("ADMIN") && !executor.getDepartment().equalsIgnoreCase("HR")) {
 			return new BasicRes(RtnCode.UNAUTHORIZATED);
 		}
 
@@ -278,7 +274,7 @@ public class EmployeeServiceImpl implements EmployeeService {
 
 	@Override
 	public BasicRes updateActivate(String executorId, String employeeId, boolean isActive) {
-		if (!StringUtils.hasText(executorId) || !StringUtils.hasText(employeeId) || executorId.equals(employeeId)) {
+		if (!StringUtils.hasText(employeeId) || executorId.equals(employeeId)) {
 			return new BasicRes(RtnCode.PARAM_ERROR);
 
 		}
@@ -286,33 +282,42 @@ public class EmployeeServiceImpl implements EmployeeService {
 
 		Employee executor = dao.findById(executorId).get();
 
-		if (executor.getDepartment().equalsIgnoreCase("ADMIN") || executor.getDepartment().equalsIgnoreCase("HR")) {
+		if (!executor.getDepartment().equalsIgnoreCase("ADMIN") && !executor.getDepartment().equalsIgnoreCase("HR")) {
 			return new BasicRes(RtnCode.UNAUTHORIZATED);
 		}
+		try {
+			int res = dao.updateActive(employeeId, isActive);
+			if (res != 1) {
+				return new BasicRes(RtnCode.UPDATE_FAILED);
 
-		if (dao.updateActive(employeeId, isActive) != 1) {
-			return new BasicRes(RtnCode.UPDATE_FAILED);
+			}
+		} catch (Exception e) {
 
+			logger.error(e.getMessage());
+			return new BasicRes(RtnCode.UPDATE_ERROR);
 		}
+
 		return new BasicRes(RtnCode.SUCCESSFUL);
 	}
 
 	@Override
-	public BasicRes resign(String executorId, String employeeId) {
+	public BasicRes updateResign(String executorId, String employeeId) {
+		// 不用判斷employeeId 是否為空,方法需要login才能使用,login方法已有判斷
 
-		if (!StringUtils.hasText(executorId) || !StringUtils.hasText(employeeId) || executorId.equals(employeeId)) {
+		if (!StringUtils.hasText(employeeId) || executorId.equals(employeeId)) {
 			return new BasicRes(RtnCode.PARAM_ERROR);
 
 		}
-		// 判斷是否為空,方法需要login才能使用,login方法已有判斷
 		Employee executor = dao.findById(executorId).get();
 
 		if (executor.getDepartment().equalsIgnoreCase("HR")) {
 			return new BasicRes(RtnCode.UNAUTHORIZATED);
 		}
+		ResignApplication application = resignApplicationDao.findByEmployeeId(employeeId);
+
 		Employee employee = dao.findById(employeeId).get();
-		employee.setResignationDate(LocalDate.now().plusMonths(1));
-		employee.setQuitReason("玉翔不想幹了!!!");
+		employee.setResignationDate(application.getResignationDate());
+		employee.setQuitReason(application.getQuitReason());
 
 		try {
 			dao.save(employee);
@@ -320,9 +325,93 @@ public class EmployeeServiceImpl implements EmployeeService {
 		} catch (Exception e) {
 
 			logger.error(e.getMessage());
-			return new BasicRes(RtnCode.UPDATE_FAILED);
+			return new BasicRes(RtnCode.UPDATE_ERROR);
 
 		}
 		return new BasicRes(RtnCode.SUCCESSFUL);
 	}
+
+	@Override
+	public BasicRes resignApplication(String employeeId) {
+		// 不用判斷employeeId 是否為空,方法需要login才能使用,login方法已有判斷
+
+		Employee employee = dao.findById(employeeId).get();
+		try {
+			resignApplicationDao.save(new ResignApplication(employeeId, employee.getDepartment(),
+					LocalDate.now().plusMonths(1), "玉翔不想幹了!!!", false, false));
+		}
+
+		catch (Exception e) {
+			logger.error(e.getMessage());
+
+			return new BasicRes(RtnCode.UPDATE_ERROR);
+		}
+		return new BasicRes(RtnCode.SUCCESSFUL);
+	}
+
+	@Override
+	public BasicRes updateInfo(String executorId, Employee employee) {
+		// 不用判斷employeeId 是否為空,方法需要login才能使用,login方法已有判斷
+
+		if (!StringUtils.hasText(employee.getId()) || executorId.equals(employee.getId())) {
+			return new BasicRes(RtnCode.PARAM_ERROR);
+
+		}
+		try {
+			int res = dao.updateInfo(employee.getId(), employee.getDepartment(), employee.getName(),
+					employee.getEmail(), employee.getJobPosition(), employee.getBirthDate(), employee.getArrivalDate(),
+					employee.getAnnualLeave(), employee.getSickLeave());
+			if (res != 1) {
+
+				return new BasicRes(RtnCode.UPDATE_FAILED);
+
+			}
+		} catch (Exception e) {
+			logger.error(e.getMessage());
+			return new BasicRes(RtnCode.UPDATE_ERROR);
+
+		}
+
+		return new BasicRes(RtnCode.SUCCESSFUL);
+	}
+
+	@Override
+	public EmployeeRes findByEmployeeId(String employeeId) {
+		// 不用判斷employeeId 是否為空,方法需要login才能使用,login方法已有判斷
+		Employee employee = dao.findById(employeeId).get();
+
+		return new EmployeeRes(RtnCode.SUCCESSFUL, employee);
+
+	}
+
+	@Override
+	public EmployeeRes findStaffInfo(String callerId, String targetId) {
+		// 不用判斷callerId 是否為空,方法需要login才能使用,login方法已有判斷
+
+		if (!StringUtils.hasText(targetId)) {
+
+			return new EmployeeRes(RtnCode.PARAM_ERROR, null);
+
+		}
+		Optional<Employee> op = dao.findById(callerId);
+		if (op.isEmpty()) {
+
+			return new EmployeeRes(RtnCode.ID_NOT_FOUND, null);
+
+		}
+		Employee targetInfo = op.get();
+		Employee callerInfo = dao.findById(callerId).get();
+
+		String callerDepartment = callerInfo.getDepartment();
+		
+		//1.同部門且caller  是單位主管2.caller是HR部門
+		if ((callerDepartment.equals(targetInfo.getDepartment()) 
+				&& JobPosition.hasReviewPermission(callerInfo.getJobPosition()))
+				|| callerDepartment.equalsIgnoreCase("HR")) {
+			return new EmployeeRes(RtnCode.SUCCESSFUL,targetInfo);
+
+		}
+		return new EmployeeRes(RtnCode.UNAUTHORIZATED,null);
+	}
+
 }
