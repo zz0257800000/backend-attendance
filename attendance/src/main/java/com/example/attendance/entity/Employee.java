@@ -15,8 +15,7 @@ public class Employee {
 	@Column(name = "id")
 	private String id;
 
-	@Column(name = "department")
-	private String department;
+
 	
 	@Column(name = "name")
 	private String name;
@@ -27,19 +26,30 @@ public class Employee {
 	@Column(name = "email")
 	private String email;
 	
-	@Column(name = "job_position")
-	private String jobPosition;
+	@Column(name = "phone_number")
+	private String phoneNumber;
 	
 	@Column(name = "birth_date")
 	private LocalDate birthDate;
 	
+	
 	@Column(name = "arrival_date")
 	private LocalDate arrivalDate;
+	
+	@Column(name = "department")
+	private String department;
+	
+	@Column(name = "job_position")
+	private String jobPosition;
+	
+
+	
+	
 	
 	@Column(name = "resignation_date")
 	private LocalDate resignationDate;
 	
-	@Column(name = "quit_reason")
+	@Column(name = "quit_reasion")
 	private String quitReason;
 	
 	@Column(name = "active")
@@ -56,34 +66,19 @@ public class Employee {
 		// TODO Auto-generated constructor stub
 	}
 
-	public Employee(String id, String department, String name, String pwd, String email, boolean active ,String jobPosition,
-			LocalDate birthDate, LocalDate arrivalDate) {
-		super();
-		this.id = id;
-		this.department = department;
-		this.name = name;
-		this.pwd = pwd;
-		this.email = email;
-		this.active = active;
-		this.jobPosition = jobPosition;
-		this.birthDate = birthDate;
-		this.arrivalDate = arrivalDate;
-		
-	}
-
-	public Employee(String id, String department, String name, String pwd, String email, String jobPosition,
-			LocalDate birthDate, LocalDate arrivalDate, LocalDate resignationDate, String quitReason,
+	public Employee(String id, String name, String pwd, String email, String phoneNumber, LocalDate birthDate,
+			LocalDate arrivalDate, String department, String jobPosition, LocalDate resignationDate, String quitReason,
 			boolean active, int annualLeave, int sickLeave) {
 		super();
 		this.id = id;
-		this.department = department;
 		this.name = name;
 		this.pwd = pwd;
 		this.email = email;
-		this.jobPosition = jobPosition;
+		this.phoneNumber = phoneNumber;
 		this.birthDate = birthDate;
 		this.arrivalDate = arrivalDate;
-		
+		this.department = department;
+		this.jobPosition = jobPosition;
 		this.resignationDate = resignationDate;
 		this.quitReason = quitReason;
 		this.active = active;
@@ -97,14 +92,6 @@ public class Employee {
 
 	public void setId(String id) {
 		this.id = id;
-	}
-
-	public String getDepartment() {
-		return department;
-	}
-
-	public void setDepartment(String department) {
-		this.department = department;
 	}
 
 	public String getName() {
@@ -131,15 +118,13 @@ public class Employee {
 		this.email = email;
 	}
 
-	public String getJobPosition() {
-		return jobPosition;
+	public String getPhoneNumber() {
+		return phoneNumber;
 	}
 
-	public void setJobPosition(String jobPosition) {
-		this.jobPosition = jobPosition;
+	public void setPhoneNumber(String phoneNumber) {
+		this.phoneNumber = phoneNumber;
 	}
-
-	
 
 	public LocalDate getBirthDate() {
 		return birthDate;
@@ -155,6 +140,22 @@ public class Employee {
 
 	public void setArrivalDate(LocalDate arrivalDate) {
 		this.arrivalDate = arrivalDate;
+	}
+
+	public String getDepartment() {
+		return department;
+	}
+
+	public void setDepartment(String department) {
+		this.department = department;
+	}
+
+	public String getJobPosition() {
+		return jobPosition;
+	}
+
+	public void setJobPosition(String jobPosition) {
+		this.jobPosition = jobPosition;
 	}
 
 	public LocalDate getResignationDate() {
@@ -197,8 +198,8 @@ public class Employee {
 		this.sickLeave = sickLeave;
 	}
 
-
 	
+
 	
 	
 	

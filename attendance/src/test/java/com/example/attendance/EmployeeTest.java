@@ -27,9 +27,10 @@ public class EmployeeTest {
 	@Test
 	public void createAdminTest(){
 		 BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
-		Employee employee = employeeDao.save(new  Employee("Admin","ADMIN","Admin",
-				encoder.encode("$Admin^_^Otp"), "admin@G", true, "99", LocalDate.now(),
-				LocalDate.now()));
+		 Employee employee = employeeDao.save(new Employee("员工1", "Liao", "123456789",
+			        "admin@G", "0933433771", LocalDate.of(2000, 1, 1), LocalDate.now(),
+			        "部门", "职位", LocalDate.now(), "离职原因",
+			        true, 10, 5));
 				Assert.isTrue(employee !=null, "Create admin error");
 
 	} 
