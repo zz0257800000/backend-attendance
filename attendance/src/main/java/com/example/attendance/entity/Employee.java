@@ -20,8 +20,6 @@ public class Employee {
 	@Column(name = "name")
 	private String name;
 	
-	@Column(name = "password")
-	private String pwd;
 	
 	@Column(name = "email")
 	private String email;
@@ -29,9 +27,12 @@ public class Employee {
 	@Column(name = "phone_number")
 	private String phoneNumber;
 	
+	
 	@Column(name = "birth_date")
 	private LocalDate birthDate;
 	
+	@Column(name = "password")
+	private String pwd;
 	
 	@Column(name = "arrival_date")
 	private LocalDate arrivalDate;
@@ -42,14 +43,11 @@ public class Employee {
 	@Column(name = "job_position")
 	private String jobPosition;
 	
-
-	
-	
 	
 	@Column(name = "resignation_date")
 	private LocalDate resignationDate;
 	
-	@Column(name = "quit_reasion")
+	@Column(name = "quit_reason")
 	private String quitReason;
 	
 	@Column(name = "active")

@@ -27,18 +27,13 @@ public class EmployeeTest {
 	@Test
 	public void createAdminTest(){
 		 BCryptPasswordEncoder encoder = new BCryptPasswordEncoder();
-		 Employee employee = employeeDao.save(new Employee("员工1", "Liao", "123456789",
+		 Employee employee = employeeDao.save(new Employee("zz025784", "Liao", encoder.encode("123"),
 			        "admin@G", "0933433771", LocalDate.of(2000, 1, 1), LocalDate.now(),
-			        "部门", "职位", LocalDate.now(), "离职原因",
+			        "工程部", "职位", LocalDate.now(), "离职原因",
 			        true, 10, 5));
 				Assert.isTrue(employee !=null, "Create admin error");
 
 	} 
-	@Test
-	public void authCodeExpiredTimeTest(){
-		
-		System.out.println(authCodeExpiredTime);
-	}
 	
 	
 }

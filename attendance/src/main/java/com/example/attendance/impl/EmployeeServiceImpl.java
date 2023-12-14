@@ -52,10 +52,10 @@ public class EmployeeServiceImpl implements EmployeeService {
 
 	@Override
 	public BasicRes create(EmployeeCreateReq req) {
-		if (!StringUtils.hasText(req.getId()) || !StringUtils.hasText(req.getDepartment())
+		if (!StringUtils.hasText(req.getId()) 
 				|| !StringUtils.hasText(req.getName()) || !StringUtils.hasText(req.getPwd())
-				|| !StringUtils.hasText(req.getEmail()) || !StringUtils.hasText(req.getJobPosition())
-				|| req.getBirthDate() == null || req.getBirthDate() == null) {
+				|| !StringUtils.hasText(req.getEmail()) 
+				) {
 			return new BasicRes(RtnCode.PARAM_ERROR);
 
 		}

@@ -25,29 +25,35 @@ public class EmployeeeController {
 	@Autowired
 	private EmployeeService employeeservice;
 
-	@GetMapping(value = "api/attendance/login")
-	public BasicRes login(@RequestBody LoginReq req, HttpSession session) {
-		if (session.getAttribute(req.getId()) == null) {
-			return employeeservice.login(req.getId(), req.getPwd(), session);
+	
+	
+	
 
-		}
-		return new BasicRes(RtnCode.SUCCESSFUL);
-	}
+	
+	
+//    @PostMapping(value = "api/attendance/login")
+//	public BasicRes login(@RequestBody LoginReq req, HttpSession session) {
+//		if (session.getAttribute(req.getId()) == null) {
+//			return employeeservice.login(req.getId(), req.getPwd(), session);
+//
+//		}
+//		return new BasicRes(RtnCode.SUCCESSFUL);
+//	}
 
 //	//如果參數不一樣在改
-//	@GetMapping(value = "api/attendance/login")
-//    public BasicRes login1(
-//    		@RequestParam(value = "id") String id,
-//    		@RequestParam(value = "password") String pwd,
-//    		HttpSession session) 
-//	
-//	{
-//    	if(session.getAttribute("id") == null) {
-//    	return employeeservice.login(id, pwd, session);
-//    	
-//    }
-//	return new BasicRes(RtnCode.SUCCESSFUL);
-//}
+	@PostMapping(value = "api/attendance/login")
+    public BasicRes login1(
+    		@RequestParam(value = "id") String id,
+    		@RequestParam(value = "password") String pwd,
+    		HttpSession session) 
+	
+	{
+    	if(session.getAttribute("id") == null) {
+    	return employeeservice.login(id, pwd, session);
+    	
+    }
+	return new BasicRes(RtnCode.SUCCESSFUL);
+}
 	// 需要把原本存的東西清掉
 	@GetMapping(value = "api/attendance/logout")
 	public BasicRes logout(HttpSession session) {
